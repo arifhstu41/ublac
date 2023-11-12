@@ -21,3 +21,7 @@
 .customers_login .mtop40{
     margin-top: 130px;
 }
+
+h1.tw-font-semibold.mbot20.login-heading {
+    color: white;
+}

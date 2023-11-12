@@ -73,4 +73,8 @@ class Migration_Version_305 extends CI_Migration
             $this->db->query('ALTER TABLE `' . db_prefix() . 'twocheckout_log` ADD `attempt_reference` VARCHAR(100) NULL DEFAULT NULL;');
         }
     }
+    
+    public function down(){
+        
+    }
 }

@@ -7,4 +7,8 @@ class Migration_Version_304 extends CI_Migration
     public function up()
     {
     }
+    
+    public function down(){
+        
+    }
 }

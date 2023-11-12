@@ -3,27 +3,6 @@
 defined('BASEPATH') or exit('No direct script access allowed');
 
 $config['useragent'] = get_option('mail_engine'); // phpmailer or codeigniter
-
-$microsoftClientId     = get_option('microsoft_mail_client_id');
-$microsoftClientSecret = get_instance()->encryption->decrypt(get_option('microsoft_mail_client_secret'));
-$tenantId              = get_option('microsoft_mail_azure_tenant_id');
-
-$googleClientId     = get_option('google_mail_client_id');
-$googleClientSecret = get_instance()->encryption->decrypt(get_option('google_mail_client_secret'));
-
-if (!empty($microsoftClientId) && !empty($microsoftClientSecret) && get_option('email_protocol') == 'microsoft') {
-    $config['client_id']     = $microsoftClientId;
-    $config['client_secret'] = $microsoftClientSecret;
-    $config['tenant_id']     = $tenantId;
-    $config['refresh_token'] = get_option('microsoft_mail_refresh_token');
-}
-
-if (!empty($googleClientId) && !empty($googleClientSecret) && get_option('email_protocol') == 'google') {
-    $config['client_id']     = $googleClientId;
-    $config['client_secret'] = $googleClientSecret;
-    $config['refresh_token'] = get_option('google_mail_refresh_token');
-}
-
 $config['protocol']  = get_option('email_protocol');
 $config['mailpath']  = '/usr/bin/sendmail'; // or "/usr/sbin/sendmail"
 $config['smtp_host'] = trim(get_option('smtp_host'));

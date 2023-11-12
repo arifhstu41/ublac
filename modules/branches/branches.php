@@ -52,7 +52,7 @@ function branches_init_menu_items()
             'name'     => _l('branches'),
             'href'     => admin_url('branches'),
             'position' => 5,
-            'icon' => 'fa fa-building-o',
+            'icon' => 'fa fa-building',
         ]);
     }
 }

@@ -21,3 +21,4 @@ $lang['estimate_postfix']           = 'Estimate Postfix';
 $lang['estimate_branch']           = 'Branch';
 $lang['clients_branch']           = 'Branch';
 $lang['branch']           = 'Branch';
+$lang['branches']           = 'Branches';

@@ -104,7 +104,7 @@ class App_Migration extends CI_Migration
             log_message('debug', 'Migrating ' . $method . ' from version ' . $current_version . ' to version ' . $number);
 
             $migration[0] = new $migration[0];
-            call_user_func($migration);
+            // call_user_func($migration);
             $current_version = $number;
             $this->_update_version($current_version);
         }

@@ -5,6 +5,18 @@ defined('BASEPATH') or exit('No direct script access allowed');
 class Migration extends App_Controller
 {
 
+    public function updatedata(){
+        
+        error_reporting(-1);
+		ini_set('display_errors', 1);
+		
+        $this->db->where('version', '294');
+        echo $this->db->update(db_prefix() . 'migrations', ['version' => 306]);
+        
+        echo $this->db->last_query();
+        
+        $data = $this->db->get(db_prefix() . 'migrations')->result_array();
+    }
     public function migrate()
     {
         if (!$this->db->field_exists('quantity', db_prefix() . 'items')) {

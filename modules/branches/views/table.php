@@ -59,7 +59,7 @@ foreach ($rResult as $aRow) {
         $row[] = $_data;
     }
 
-    $options = icon_btn('branches/branch/' . $aRow['id'], 'pencil-square-o', 'btn-default');
+    $options = icon_btn('branches/branch/' . $aRow['id'], 'fa fa-pencil', 'btn-default');
 
     $row[]              = $options; //.= icon_btn('branches/delete/' . $aRow['id'], 'remove', 'btn-danger _delete');
 
