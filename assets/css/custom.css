@@ -1,0 +1,23 @@
+.customers_login .customers .navbar-default{
+   margin-bottom: 0;
+}
+.customers_login #wrapper{
+    background: url(https://drive.ublac.com/index.php/s/pdC67Fy78BwtrAE/preview);
+    background-position: center;
+    background-size: cover;
+    position: absolute;
+    width: 100%;
+    top: 0;
+}
+.customers_login #wrapper .text-uppercase{
+    color: #FFF;
+}
+.customers_login .navbar-default{
+    background-color: rgba(0, 0, 0, 0.51) !important;
+}
+.customers_login .navbar{
+    z-index: 1000;
+}
+.customers_login .mtop40{
+    margin-top: 130px;
+}
