@@ -492,6 +492,7 @@ function handle_sales_attachments($rel_id, $rel_type)
  */
 function handle_client_attachments_upload($id, $customer_upload = false)
 {
+    set_time_limit(-1);
     $path          = get_upload_path_by_type('customer') . $id . '/';
     $CI            = & get_instance();
     $totalUploaded = 0;
@@ -529,8 +530,17 @@ function handle_client_attachments_upload($id, $customer_upload = false)
                     'filetype'  => $_FILES['file']['type'][$i],
                     ];
 
+                    $attachment[0]['cloudstorage_url'] = upload_to_nextcloud($tmpFilePath, $filename, $id);
                     if (is_image($newFilePath)) {
                         create_img_thumb($newFilePath, $filename);
+
+                        $fileinfo = pathinfo($newFilePath);
+                        $thumbfilepath = $fileinfo['dirname'] . '/'. $fileinfo['filename'] . "_thumb" . '.' .  $fileinfo['extension'];
+                        if (file_exists($thumbfilepath) && !is_null($attachment[0]['cloudstorage_url'])) {
+
+                            $thumbfilename = $fileinfo['filename'] . "_thumb" . '.' .  $fileinfo['extension'];
+                            $attachment[0]['cloudstorage_thumb_url'] = upload_to_nextcloud($thumbfilepath, $thumbfilename, $id);
+                        }
                     }
 
                     if ($customer_upload == true) {
@@ -1148,4 +1158,144 @@ function get_upload_path_by_type($type)
     }
 
     return hooks()->apply_filters('get_upload_path_by_type', $path, $type);
+}
+
+/**
+ * Function that uploads file to nextcloud
+ * @param  string $tmpFilePath from formdata
+ * @param  string $filename unique filename
+ * @param  mixed $clientid client id
+ * @return string
+ */
+function upload_to_nextcloud($tmpFilePath, $filename, $clientid)
+{
+    $username = '';
+    $password = '';
+    $baseurl = 'https://drive.ublac.com/remote.php/dav/files/'.$username;
+    $file = $tmpFilePath;
+
+    $CI = & get_instance();
+    $CI->load->model('Clients_model');
+    $clientData = $CI->Clients_model->get($clientid);
+    
+    $file_url = NULL;
+    $path = $clientData->company;
+    $url = $baseurl . "/" . $path;
+    $responseFolderExistData = check_folder_exists_in_nextcloud($url, $username, $password);
+    if (@$responseFolderExistData['does_folder_exist']) {
+
+        $response = upload_file_in_nextcloud($url, $filename, $username, $password, $file);
+
+        if ($response['status']) {
+            $file_url = $response['file_url'];
+        }
+
+    } else if (@$responseFolderExistData['does_folder_exist'] === false) {
+
+        $response = create_folder_in_nextcloud($url, $username, $password);
+
+        if ($response['status']) {
+
+            $response = upload_file_in_nextcloud($url, $filename, $username, $password, $file);
+            if ($response['status']) {
+
+                $file_url = $response['file_url'];
+            }
+        }
+    }
+
+    return $file_url;
+}
+
+function check_folder_exists_in_nextcloud($url, $username, $password)
+{
+    $ch = curl_init();
+
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_USERPWD, $username . ":" . $password);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PROPFIND');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array('Depth: 0'));
+
+    $result = curl_exec($ch);
+
+    if($result === false) {
+        
+        $response['status'] = 0;
+        $response['message'] = 'Error occurred: ' . curl_error($ch);
+    } else {
+
+        $xml = simplexml_load_string($result);
+        $namespaces = $xml->getNamespaces(true);
+        $dav = $namespaces['d'];
+
+        $response['status'] = 1;
+        if (isset($xml->response->$dav->resourcetype->$dav->collection)) {
+
+            $response['does_folder_exist'] = true;
+            $response['message'] = "Folder exists";
+        } else {
+            $response['does_folder_exist'] = false;
+            $response['message'] = "Folder does not exist";
+        }
+    }
+
+    curl_close($ch);
+
+    return $response;
+}
+
+function create_folder_in_nextcloud($url, $username, $password)
+{
+    $response = array(
+        'status' => 0,
+    );
+
+    $ch = curl_init();
+
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_USERPWD, $username . ":" . $password);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'MKCOL');
+
+    $result = curl_exec($ch);
+
+    if($result === false) {
+
+        $response['message'] = 'Error occurred: ' . curl_error($ch);
+    } else {
+
+        $response['status'] = 1;
+    }
+
+    curl_close($ch);
+
+    return $response;
+}
+
+function upload_file_in_nextcloud($url, $filename, $username, $password, $file)
+{
+    $ch = curl_init();
+
+    curl_setopt($ch, CURLOPT_URL, $url . '/' . $filename);
+    curl_setopt($ch, CURLOPT_USERPWD, $username . ":" . $password);
+    curl_setopt($ch, CURLOPT_PUT, 1);
+    curl_setopt($ch, CURLOPT_INFILE, fopen($file, 'r'));
+    curl_setopt($ch, CURLOPT_INFILESIZE, filesize($file));
+
+    $result = curl_exec($ch);
+
+    $response["status"] = 1;
+    if($result === false) {
+        
+        $response["status"] = 0;
+        $response["message"] = 'Error occurred: ' . curl_error($ch);
+    } else {
+
+        $file_url = $url . '/' . $filename;
+        $response["file_url"] = $file_url;
+    }
+
+    curl_close($ch);
+
+    return $response;
 }
