@@ -530,7 +530,11 @@ function handle_client_attachments_upload($id, $customer_upload = false)
                     'filetype'  => $_FILES['file']['type'][$i],
                     ];
 
-                    $attachment[0]['cloudstorage_url'] = upload_to_nextcloud($tmpFilePath, $filename, $id);
+                    $contactUserId = get_contact_user_id();
+                    $CI->load->model('Clients_model');
+                    $contactdata = $CI->Clients_model->get_contact($contactUserId);
+                    $contactfullname = trim($contactdata->firstname . ' ' . $contactdata->lastname);
+                    $attachment[0]['cloudstorage_url'] = upload_to_nextcloud($tmpFilePath, $filename, $contactfullname);
                     if (is_image($newFilePath)) {
                         create_img_thumb($newFilePath, $filename);
 
@@ -539,7 +543,7 @@ function handle_client_attachments_upload($id, $customer_upload = false)
                         if (file_exists($thumbfilepath) && !is_null($attachment[0]['cloudstorage_url'])) {
 
                             $thumbfilename = $fileinfo['filename'] . "_thumb" . '.' .  $fileinfo['extension'];
-                            $attachment[0]['cloudstorage_thumb_url'] = upload_to_nextcloud($thumbfilepath, $thumbfilename, $id);
+                            $attachment[0]['cloudstorage_thumb_url'] = upload_to_nextcloud($thumbfilepath, $thumbfilename, $contactfullname);
                         }
                     }
 
@@ -1167,19 +1171,15 @@ function get_upload_path_by_type($type)
  * @param  mixed $clientid client id
  * @return string
  */
-function upload_to_nextcloud($tmpFilePath, $filename, $clientid)
+function upload_to_nextcloud($tmpFilePath, $filename, $contactfullname)
 {
-    $username = '';
-    $password = '';
+    $username = 'ariful.fb';
+    $password = 'arifHsut41@!';
     $baseurl = 'https://drive.ublac.com/remote.php/dav/files/'.$username;
     $file = $tmpFilePath;
-
-    $CI = & get_instance();
-    $CI->load->model('Clients_model');
-    $clientData = $CI->Clients_model->get($clientid);
     
     $file_url = NULL;
-    $path = $clientData->company;
+    $path = $contactfullname;
     $url = $baseurl . "/" . $path;
     $responseFolderExistData = check_folder_exists_in_nextcloud($url, $username, $password);
     if (@$responseFolderExistData['does_folder_exist']) {
