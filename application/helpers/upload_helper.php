@@ -1209,23 +1209,20 @@ function upload_to_nextcloud($tmpFilePath, $filename, $contactfullname)
 
 function check_folder_exists_in_nextcloud($url, $username, $password)
 {
-    $ch = curl_init();
+    $client = new \GuzzleHttp\Client();
+    $res = $client->request('PROPFIND', $url, [
+        'auth' => [$username, $password]
+    ]);
 
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_USERPWD, $username . ":" . $password);
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PROPFIND');
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, array('Depth: 0'));
-
-    $result = curl_exec($ch);
-
-    if($result === false) {
+    $statusCode = $res->getStatusCode();
+    if($statusCode >= 400) {
         
         $response['status'] = 0;
-        $response['message'] = 'Error occurred: ' . curl_error($ch);
+        $response['statusCode'] = $statusCode;
+        $response['message'] = $res->getBody();
     } else {
 
-        $xml = simplexml_load_string($result);
+        $xml = simplexml_load_string($res->getBody());
         if ($xml) {
 
             $namespaces = $xml->getNamespaces(true);
@@ -1247,8 +1244,6 @@ function check_folder_exists_in_nextcloud($url, $username, $password)
         }
     }
 
-    curl_close($ch);
-
     return $response;
 }
 
@@ -1258,51 +1253,45 @@ function create_folder_in_nextcloud($url, $username, $password)
         'status' => 0,
     );
 
-    $ch = curl_init();
+    $client = new \GuzzleHttp\Client();
+    $res = $client->request('MKCOL', $url, [
+        'auth' => [$username, $password]
+    ]);
 
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_USERPWD, $username . ":" . $password);
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'MKCOL');
-
-    $result = curl_exec($ch);
-
-    if($result === false) {
-
-        $response['message'] = 'Error occurred: ' . curl_error($ch);
-    } else {
+    $statusCode = $res->getStatusCode();
+    if ($statusCode >= 200 && $statusCode < 300) {
 
         $response['status'] = 1;
+    } else {
+        
+        $response['message'] = $res->getBody();
     }
-
-    curl_close($ch);
 
     return $response;
 }
 
 function upload_file_in_nextcloud($url, $filename, $username, $password, $file)
 {
-    $ch = curl_init();
+    $client = new \GuzzleHttp\Client();
+    $contents = file_get_contents($file); // Replace with the path to your local file
 
-    curl_setopt($ch, CURLOPT_URL, $url . '/' . $filename);
-    curl_setopt($ch, CURLOPT_USERPWD, $username . ":" . $password);
-    curl_setopt($ch, CURLOPT_PUT, 1);
-    curl_setopt($ch, CURLOPT_INFILE, fopen($file, 'r'));
-    curl_setopt($ch, CURLOPT_INFILESIZE, filesize($file));
+    $res = $client->request('PUT', $url . '/' . $filename, [
+        'auth' => [$username, $password],
+        'body' => $contents
+    ]);
 
-    $result = curl_exec($ch);
+    $statusCode = $res->getStatusCode();
 
     $response["status"] = 1;
-    if($result === false) {
+    if($statusCode >= 400) {
         
         $response["status"] = 0;
-        $response["message"] = 'Error occurred: ' . curl_error($ch);
+        $response["message"] = $res->getBody();
     } else {
 
         $file_url = $url . '/' . $filename;
         $response["file_url"] = $file_url;
     }
-
-    curl_close($ch);
 
     return $response;
 }
