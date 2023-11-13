@@ -1212,7 +1212,7 @@ function check_folder_exists_in_nextcloud($url, $username, $password)
     $client = new \GuzzleHttp\Client();
     $headers = [
         'Authorization' => 'Basic ' . base64_encode($username.':'.$password),
-        'Content-Type' => 'application/xml',
+        'Content-Type' => 'application/xml; charset=utf-8',
     ];
     try {
 
@@ -1244,28 +1244,14 @@ function check_folder_exists_in_nextcloud($url, $username, $password)
         $response['status'] = 0;
         $response['statusCode'] = $statusCode;
         $response['message'] = $res->getBody();
+    } else if ($statusCode === 207) {
+
+        $response['does_folder_exist'] = true;
+        $response['message'] = "Folder exists";
     } else {
 
-        $xml = simplexml_load_string($res->getBody());
-        if ($xml) {
-
-            $namespaces = $xml->getNamespaces(true);
-            $dav = $namespaces['d'];
-    
-            $response['status'] = 1;
-            if (isset($xml->response->$dav->resourcetype->$dav->collection)) {
-    
-                $response['does_folder_exist'] = true;
-                $response['message'] = "Folder exists";
-            } else {
-                $response['does_folder_exist'] = false;
-                $response['message'] = "Folder does not exist";
-            }
-        } else {
-
-            $response['does_folder_exist'] = false;
-            $response['message'] = "Folder does not exist";
-        }
+        $response['does_folder_exist'] = false;
+        $response['message'] = "Folder does not exist";
     }
 
     return $response;
