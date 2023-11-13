@@ -1226,15 +1226,22 @@ function check_folder_exists_in_nextcloud($url, $username, $password)
     } else {
 
         $xml = simplexml_load_string($result);
-        $namespaces = $xml->getNamespaces(true);
-        $dav = $namespaces['d'];
+        if ($xml) {
 
-        $response['status'] = 1;
-        if (isset($xml->response->$dav->resourcetype->$dav->collection)) {
-
-            $response['does_folder_exist'] = true;
-            $response['message'] = "Folder exists";
+            $namespaces = $xml->getNamespaces(true);
+            $dav = $namespaces['d'];
+    
+            $response['status'] = 1;
+            if (isset($xml->response->$dav->resourcetype->$dav->collection)) {
+    
+                $response['does_folder_exist'] = true;
+                $response['message'] = "Folder exists";
+            } else {
+                $response['does_folder_exist'] = false;
+                $response['message'] = "Folder does not exist";
+            }
         } else {
+
             $response['does_folder_exist'] = false;
             $response['message'] = "Folder does not exist";
         }
