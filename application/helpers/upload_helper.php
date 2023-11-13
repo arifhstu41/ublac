@@ -1210,9 +1210,33 @@ function upload_to_nextcloud($tmpFilePath, $filename, $contactfullname)
 function check_folder_exists_in_nextcloud($url, $username, $password)
 {
     $client = new \GuzzleHttp\Client();
-    $res = $client->request('PROPFIND', $url, [
-        'auth' => [$username, $password]
-    ]);
+    $headers = [
+        'Authorization' => 'Basic ' . base64_encode($username.':'.$password),
+        'Content-Type' => 'application/xml',
+    ];
+    try {
+
+        $request = new \GuzzleHttp\Psr7\Request('PROPFIND', $url, $headers);
+        $res = $client->sendAsync($request)->wait();
+        
+    } catch (GuzzleHttp\Exception\ClientException $e) {
+
+        if ($e->hasResponse() && $e->getResponse()->getStatusCode() == 404) {
+            // Handle the 404 error here
+            $response['status'] = 0;
+            $response['statusCode'] = 404;
+            $response['message'] = $e->getMessage();
+            $response['does_folder_exist'] = false;
+        } else {
+            // Re-throw the exception if it's not a 404 error
+            $response['status'] = 0;
+            $response['statusCode'] = $e->getResponse()->getStatusCode();
+            $response['message'] = $e->getMessage();
+            $response['does_folder_exist'] = false;
+        }
+
+        return $response;
+    }
 
     $statusCode = $res->getStatusCode();
     if($statusCode >= 400) {
