@@ -36,6 +36,16 @@ class Migration extends App_Controller
             ADD COLUMN `quantity_unit` varchar(100) NULL DEFAULT '0';");
         }
 
+        if (!$this->db->field_exists('cloudstorage_url', db_prefix() . 'files')) {
+            $this->db->query('ALTER TABLE `' . db_prefix() . "files`
+            ADD COLUMN `cloudstorage_url` MEDIUMTEXT NULL;");
+        }
+
+        if (!$this->db->field_exists('cloudstorage_thumb_url', db_prefix() . 'files')) {
+            $this->db->query('ALTER TABLE `' . db_prefix() . "files`
+            ADD COLUMN `cloudstorage_thumb_url` MEDIUMTEXT NULL;");
+        }
+
         echo $this->db->last_query();
     }
 
