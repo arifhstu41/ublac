@@ -2672,33 +2672,33 @@ class timesheets_model extends app_model {
 							$type_check_notify = strtolower(_l('checked_in_at'));
 						}
 						foreach ($staff_array_id as $key => $staffid) {
-						// 	$email = $this->get_staff_email($staffid);
-						// 	if ($email != '') {
-						// 		$staff_name = get_staff_full_name($data['staff_id']);
-						// 		$data_send_mail = new stdClass();
-						// 		$data_send_mail->receiver = $email;
-						// 		$data_send_mail->staff_name = $staff_name;
-						// 		$data_send_mail->type_check = $type_check_email;
-						// 		$data_send_mail->date_time = _d($data['date']);
-						// 		$template = mail_template('attendance_notice', 'timesheets', $data_send_mail);
-						// 		$template->send();
-						// 		$this->notifications($staffid, 'timesheets/requisition_manage', $type_check_notify.' ' . _d($data['date']));
-						// 	}
-						// }
-						// // Send email to customer when staff check in/out at customer location
-						// if($check_more == 'check_route' && (get_timesheets_option('allow_employees_to_create_work_points') == 1)){
-						// 	$customer_email = $this->get_customer_email_route_point($point_id);
-						// 	if($customer_email != ''){
-						// 		$staff_name = get_staff_full_name($data['staff_id']);
-						// 		$data_send_mail = new stdClass();
-						// 		$data_send_mail->receiver = $customer_email;
-						// 		$data_send_mail->staff_name = $staff_name;
-						// 		$data_send_mail->type_check = $type_check_email;
-						// 		$data_send_mail->date_time = _d($data['date']);
-						// 		$template = mail_template('attendance_notice', 'timesheets', $data_send_mail);
-						// 		$template->send();
-						// 	}
-						// }
+							$email = $this->get_staff_email($staffid);
+							if ($email != '') {
+								$staff_name = get_staff_full_name($data['staff_id']);
+								$data_send_mail = new stdClass();
+								$data_send_mail->receiver = $email;
+								$data_send_mail->staff_name = $staff_name;
+								$data_send_mail->type_check = $type_check_email;
+								$data_send_mail->date_time = _d($data['date']);
+								$template = mail_template('attendance_notice', 'timesheets', $data_send_mail);
+								$template->send();
+								$this->notifications($staffid, 'timesheets/requisition_manage', $type_check_notify.' ' . _d($data['date']));
+							}
+						}
+						// Send email to customer when staff check in/out at customer location
+						if($check_more == 'check_route' && (get_timesheets_option('allow_employees_to_create_work_points') == 1)){
+							$customer_email = $this->get_customer_email_route_point($point_id);
+							if($customer_email != ''){
+								$staff_name = get_staff_full_name($data['staff_id']);
+								$data_send_mail = new stdClass();
+								$data_send_mail->receiver = $customer_email;
+								$data_send_mail->staff_name = $staff_name;
+								$data_send_mail->type_check = $type_check_email;
+								$data_send_mail->date_time = _d($data['date']);
+								$template = mail_template('attendance_notice', 'timesheets', $data_send_mail);
+								$template->send();
+							}
+						}
 					}
 				}				
 				return true;
