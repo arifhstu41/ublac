@@ -41,4 +41,10 @@ class Cron extends App_Controller
 
         echo $this->db->last_query();
     }
+
+    public function checkTime(){
+        $this->load->helper('date_helper');
+        echo date_default_timezone_get();
+        echo date("y-m-d H:i:s", now());die;
+    }
 }

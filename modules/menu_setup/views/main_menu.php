@@ -124,7 +124,7 @@ $(function() {
     });
 });
 
-function save_menu() {
+function save_menu() { 
     var items = $('body').find('.dd.active li').not(".dd-list-sub-items li");
     var mainPosition = false;
     $.each(items, function(key, val) {
@@ -141,6 +141,7 @@ function save_menu() {
         var sub_items = main_menu.find('.dd-list-sub-items li');
         var subPosition = false;
         $.each(sub_items, function(subKey, val) {
+            
             if (subPosition === false) {
                 subPosition = subKey + 5;
             } else {
@@ -148,7 +149,9 @@ function save_menu() {
             }
             var sub_item = $(this);
             sub_item.data('disabled', sub_item.find('.is-disabled-child').prop('checked') === true);
-            sub_item.data('icon', sub_item.find('#icon-' + sub_item.data('id')).val());
+            if('#icon-' + sub_item.data('id') != "#icon-popups/create" && '#icon-' + sub_item.data('id') != "#icon-popups/subscribers"){
+                sub_item.data('icon', sub_item.find('#icon-' + sub_item.data('id')).val());
+            }
             sub_item.data('position', subPosition);
         });
     });

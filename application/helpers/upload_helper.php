@@ -492,6 +492,7 @@ function handle_sales_attachments($rel_id, $rel_type)
  */
 function handle_client_attachments_upload($id, $customer_upload = false)
 {
+    set_time_limit(-1);
     $path          = get_upload_path_by_type('customer') . $id . '/';
     $CI            = & get_instance();
     $totalUploaded = 0;
@@ -529,8 +530,21 @@ function handle_client_attachments_upload($id, $customer_upload = false)
                     'filetype'  => $_FILES['file']['type'][$i],
                     ];
 
+                    $contactUserId = get_contact_user_id();
+                    $CI->load->model('Clients_model');
+                    $contactdata = $CI->Clients_model->get_contact($contactUserId);
+                    $contactfullname = trim($contactdata->firstname . ' ' . $contactdata->lastname);
+                    $attachment[0]['cloudstorage_url'] = upload_to_nextcloud($tmpFilePath, $filename, $contactfullname);
                     if (is_image($newFilePath)) {
                         create_img_thumb($newFilePath, $filename);
+
+                        $fileinfo = pathinfo($newFilePath);
+                        $thumbfilepath = $fileinfo['dirname'] . '/'. $fileinfo['filename'] . "_thumb" . '.' .  $fileinfo['extension'];
+                        if (file_exists($thumbfilepath) && !is_null($attachment[0]['cloudstorage_url'])) {
+
+                            $thumbfilename = $fileinfo['filename'] . "_thumb" . '.' .  $fileinfo['extension'];
+                            $attachment[0]['cloudstorage_thumb_url'] = upload_to_nextcloud($thumbfilepath, $thumbfilename, $contactfullname);
+                        }
                     }
 
                     if ($customer_upload == true) {
@@ -1148,4 +1162,146 @@ function get_upload_path_by_type($type)
     }
 
     return hooks()->apply_filters('get_upload_path_by_type', $path, $type);
+}
+
+/**
+ * Function that uploads file to nextcloud
+ * @param  string $tmpFilePath from formdata
+ * @param  string $filename unique filename
+ * @param  mixed $clientid client id
+ * @return string
+ */
+function upload_to_nextcloud($tmpFilePath, $filename, $contactfullname)
+{
+    $username = 'ariful.fb';
+    $password = 'arifHsut41@!';
+    $baseurl = 'https://drive.ublac.com/remote.php/dav/files/'.$username;
+    $file = $tmpFilePath;
+    
+    $file_url = NULL;
+    $path = $contactfullname;
+    $url = $baseurl . "/" . $path;
+    $responseFolderExistData = check_folder_exists_in_nextcloud($url, $username, $password);
+    if (@$responseFolderExistData['does_folder_exist']) {
+
+        $response = upload_file_in_nextcloud($url, $filename, $username, $password, $file);
+
+        if ($response['status']) {
+            $file_url = $response['file_url'];
+        }
+
+    } else if (@$responseFolderExistData['does_folder_exist'] === false) {
+
+        $response = create_folder_in_nextcloud($url, $username, $password);
+
+        if ($response['status']) {
+
+            $response = upload_file_in_nextcloud($url, $filename, $username, $password, $file);
+            if ($response['status']) {
+
+                $file_url = $response['file_url'];
+            }
+        }
+    }
+
+    return $file_url;
+}
+
+function check_folder_exists_in_nextcloud($url, $username, $password)
+{
+    $client = new \GuzzleHttp\Client();
+    $headers = [
+        'Authorization' => 'Basic ' . base64_encode($username.':'.$password),
+        'Content-Type' => 'application/xml; charset=utf-8',
+    ];
+    try {
+
+        $request = new \GuzzleHttp\Psr7\Request('PROPFIND', $url, $headers);
+        $res = $client->sendAsync($request)->wait();
+        
+    } catch (GuzzleHttp\Exception\ClientException $e) {
+
+        if ($e->hasResponse() && $e->getResponse()->getStatusCode() == 404) {
+            // Handle the 404 error here
+            $response['status'] = 0;
+            $response['statusCode'] = 404;
+            $response['message'] = $e->getMessage();
+            $response['does_folder_exist'] = false;
+        } else {
+            // Re-throw the exception if it's not a 404 error
+            $response['status'] = 0;
+            $response['statusCode'] = $e->getResponse()->getStatusCode();
+            $response['message'] = $e->getMessage();
+            $response['does_folder_exist'] = false;
+        }
+
+        return $response;
+    }
+
+    $statusCode = $res->getStatusCode();
+    if($statusCode >= 400) {
+        
+        $response['status'] = 0;
+        $response['statusCode'] = $statusCode;
+        $response['message'] = $res->getBody();
+    } else if ($statusCode === 207) {
+
+        $response['does_folder_exist'] = true;
+        $response['message'] = "Folder exists";
+    } else {
+
+        $response['does_folder_exist'] = false;
+        $response['message'] = "Folder does not exist";
+    }
+
+    return $response;
+}
+
+function create_folder_in_nextcloud($url, $username, $password)
+{
+    $response = array(
+        'status' => 0,
+    );
+
+    $client = new \GuzzleHttp\Client();
+    $res = $client->request('MKCOL', $url, [
+        'auth' => [$username, $password]
+    ]);
+
+    $statusCode = $res->getStatusCode();
+    if ($statusCode >= 200 && $statusCode < 300) {
+
+        $response['status'] = 1;
+    } else {
+        
+        $response['message'] = $res->getBody();
+    }
+
+    return $response;
+}
+
+function upload_file_in_nextcloud($url, $filename, $username, $password, $file)
+{
+    $client = new \GuzzleHttp\Client();
+    $contents = file_get_contents($file); // Replace with the path to your local file
+
+    $res = $client->request('PUT', $url . '/' . $filename, [
+        'auth' => [$username, $password],
+        'body' => $contents
+    ]);
+
+    $statusCode = $res->getStatusCode();
+
+    $response["status"] = 1;
+    if($statusCode >= 400) {
+        
+        $response["status"] = 0;
+        $response["message"] = $res->getBody();
+    } else {
+
+        $file_url = $url . '/' . $filename;
+        $response["file_url"] = $file_url;
+    }
+
+    return $response;
 }
